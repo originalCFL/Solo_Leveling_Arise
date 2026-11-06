@@ -1,5 +1,5 @@
 // 修改 index.html 後，把版本號加 1，已安裝的 APP 就會更新
-const CACHE = 'hunter-v1';
+const CACHE = 'hunter-v3';
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));

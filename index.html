@@ -37,7 +37,7 @@ h1,h2,h3{margin:0;font-weight:700}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px}
 .st{font-size:13px}.st b{float:right;color:#fff}
 .tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:rgba(4,8,20,.95);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
-.tabs button{flex:1;background:none;border:0;color:var(--dim);font:inherit;font-size:13px;padding:13px 4px;cursor:pointer}
+.tabs button{flex:1;background:none;border:0;color:var(--dim);font:inherit;font-size:12px;padding:13px 1px;cursor:pointer}
 .tabs button.on{color:#fff;text-shadow:0 0 10px var(--glow);box-shadow:inset 0 2px 0 var(--glow)}
 .q{border:1px solid #1d3a86;padding:10px 12px;margin-bottom:10px;background:rgba(5,12,32,.6)}
 .q.bad{border-color:#6b2038}
@@ -79,6 +79,7 @@ input,select{width:100%;background:#050c20;border:1px solid var(--line);color:va
 .seg button.sel{background:rgba(77,163,255,.4)}
 .cd{font-size:12px}.opt{display:block;width:100%;margin-bottom:8px;text-align:left;padding:11px 14px}.opt.sel{background:rgba(77,163,255,.45);box-shadow:0 0 10px var(--glow)}
 html{background:#04060d}body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;-webkit-user-select:none;user-select:none}input,textarea{-webkit-user-select:text;user-select:text}textarea{width:100%;height:150px;background:#050c20;border:1px solid var(--line);color:var(--text);padding:9px;font:inherit;font-size:16px;resize:none}
+.it{display:flex;justify-content:space-between;gap:8px;font-size:14px;padding:5px 0;text-align:left}.r0{color:#9aa7c7}.r1{color:#4da3ff}.r2{color:#b57cff}.r3{color:#ffc857}
 </style>
 </head>
 <body>
@@ -103,13 +104,13 @@ function load(){try{var r=localStorage.getItem(KEY);S=r?JSON.parse(r):fresh()}ca
  rollover();if(!S.init&&!S.habits.length)ovq.push({k:'quiz'})}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 function daysDiff(a,b){return Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/864e5)}
-function rollover(){var L=[],hp=0,xp=0;
+function rollover(){var L=[],hp=0,xp=0;S.gems=S.gems||0;S.pity=S.pity||0;S.dungeons=S.dungeons||[];
  S.habits.forEach(function(h){if(h.last&&h.last<Y)h.streak=0;
   if(S.hard&&h.type==='good'){var b=h.last||h.start||S.day;if(h.pen&&h.pen>b)b=h.pen;
    var m=Math.min(3,Math.max(0,daysDiff(b,Y)));if(m>0){hp+=10*m;xp+=Math.ceil(h.xp/2)*m;L.push(h.name+'：漏做 '+m+' 天')}}
   h.pen=Y});
- if(S.day!==T)S.hp=Math.min(100,S.hp+10);
- S.day=T;
+ if(S.day!==T)S.hp=Math.min(100,S.hp+10+(sk('s2')?5:0));
+ dExpire();S.day=T;
  if(hp){S.hp-=hp;S.xp=Math.max(0,S.xp-xp);if(S.hp<=0){S.hp=50;S.xp=0;L.push('瀕死：本級經驗歸零，HP 回復至 50')}ovq.push({k:'pen',L:L,hp:hp,xp:xp})}
  save()}
 function tick(){if(ds()!==T){T=ds();Y=ds(new Date(Date.now()-864e5));rollover();render();flush();return}updateCd()}
@@ -144,33 +145,92 @@ function importData(){$('#ov').innerHTML='<div class="ov"><div class="win"><div 
 function doImport(){var o;try{o=JSON.parse($('#bk').value.trim())}catch(e){toast('格式不正確，請完整貼上備份文字',true);return}
  if(!o||!Array.isArray(o.habits)||!o.stats||typeof o.lv!=='number'){toast('這不是有效的備份',true);return}
  S=o;S.init=true;rollover();save();closeOv();toast('[系統] 備份已還原')}
+var RK=['E','D','C','B','A','S'],RN=['普通','稀有','史詩','傳說'],RP=[1,2,4,8],LP=[.02,.04,.07,.12],KD=['武器','防具','飾品'];
+var EQN=[['鐵匕首','獵人長劍','影之短刃','君王雙刃'],['皮甲','鎖子甲','暗影披風','君王鎧甲'],['銅戒','魔力吊墜','影子戒指','君王之冠']];
+var SK={s1:['魂晶感應','完成任務時額外 +1 魂晶',1],s2:['再生','每日 HP 回復 +5',1],s3:['鐵壁','破戒時 HP 損失 −5',1],s4:['君王威壓','XP 加成 +5%',2],s5:['壓制','副本傷害 +20%',2],s6:['暗影支配','暗影收編機率 +20%',3]};
+var MON=[['哥布林兵','巨鼠','盜賊'],['狼人','獸人戰士','叛逃獵人'],['石像鬼','暗夜刺客','巨魔'],['冰熊','騎士團長','蜥蜴戰神'],['龍騎士','巨人王','暗影法師'],['古龍','冰之君主','將軍級獵人']];
+var W=[[70,25,5,0],[60,30,9,1],[45,38,15,2],[30,42,22,6],[20,40,30,10],[10,35,38,17]];
+function sk(i){return S.skills&&S.skills.indexOf(i)>-1}
+function rnd(a){return a[Math.floor(Math.random()*a.length)]}
+function pickR(w){var t=w.reduce(function(a,b){return a+b},0),x=Math.random()*t;for(var i=0;i<w.length;i++){x-=w[i];if(x<0)return i}return 0}
+function bestG(k){var b=-1;(S.gear||[]).forEach(function(g){if(g.k===k&&g.r>b)b=g.r});return b}
+function gearPct(){var p=0;for(var k=0;k<3;k++){var b=bestG(k);if(b>=0)p+=RP[b]/100}return p}
+function legPct(){return Math.min(.5,(S.legion||[]).reduce(function(a,m){return a+LP[m.r]},0))}
+function mult(){return Math.min(3,1+0.1*shadows().length+gearPct()+legPct()+(sk('s4')?.05:0))}
+function loot(r){var t=pickR([55,15,30]),rf=[1,3,8,20][r];
+ if(t===0){var k=Math.floor(Math.random()*3);S.gear=S.gear||[];
+  if(S.gear.some(function(g){return g.k===k&&g.r===r})){S.gems+=rf;return{r:r,txt:KD[k]+'・'+EQN[k][r]+'（重複，換回 '+rf+' 魂晶）'}}
+  S.gear.push({k:k,r:r});return{r:r,txt:KD[k]+'・'+EQN[k][r]+'　XP +'+RP[r]+'%'}}
+ if(t===1){var sr=Math.max(1,Math.min(3,r)),id=rnd(Object.keys(SK).filter(function(i){return SK[i][2]===sr}));S.skills=S.skills||[];
+  if(sk(id)){S.gems+=rf;return{r:sr,txt:'技能・'+SK[id][0]+'（重複，換回 '+rf+' 魂晶）'}}
+  S.skills.push(id);return{r:sr,txt:'技能・'+SK[id][0]+'：'+SK[id][1]}}
+ var n=rnd(MON[[0,2,4,5][r]]);S.legion=S.legion||[];S.legion.push({n:n,r:r});return{r:r,txt:'暗影士兵・'+n+'　XP +'+Math.round(LP[r]*100)+'%'}}
+function itemsHtml(a){return a.map(function(x){return'<div class="it r'+x.r+'">'+RN[x.r]+'　'+esc(x.txt)+'</div>'}).join('')}
+function pull(n){var c=n===10?90:10;if(S.gems<c){toast('魂晶不足',true);return}S.gems-=c;var res=[],low=true;
+ for(var i=0;i<n;i++){S.pity++;var r=S.pity>=30?3:pickR([60,28,9,3]);if(r===3)S.pity=0;if(n===10&&i===9&&low&&r===0)r=1;if(r>0)low=false;res.push(loot(r))}
+ save();$('#ov').innerHTML='<div class="ov"><div class="win" style="max-height:92vh;overflow:auto"><div class="ttl" style="justify-content:center">[ 抽取結果 ]</div>'+itemsHtml(res)+'<div class="btns" style="justify-content:center"><button class="b" onclick="closeOv()">確認</button></div></div></div>'}
+function addDays(s,n){var d=new Date(s+'T00:00:00');d.setDate(d.getDate()+n);return ds(d)}
+function baseXp(){return S.habits.reduce(function(a,h){return a+h.xp},0)}
+function mkD(o){o.id='d'+Date.now()+Math.floor(Math.random()*99);o.start=T;if(o.days){o.end=addDays(T,o.days-1);o.max=o.hp=Math.round(o.days*baseXp()*o.k)}S.dungeons.push(o);save()}
+function openGate(){if(!S.habits.length){toast('請先建立任務',true);return}$('#ov').innerHTML='<div class="ov"><div class="win"><div class="ttl">[ 開啟傳送門 ]</div><label>名稱（可留空）</label><input id="gn" maxlength="20"><label>天數（天數越長，階級越高）</label><select id="gd"><option>7</option><option>14</option><option>21</option><option>30</option></select><label>強度</label><select id="gt"><option value="0">標準（需完成約 70%）</option><option value="1">精英（階級 +1，需約 85%）</option><option value="2">地獄（階級 +2，需每日全勤）</option></select><div class="btns" style="justify-content:center;margin-top:14px"><button class="b" onclick="addGate()">開啟</button><button class="b x" style="margin-left:0" onclick="closeOv()">取消</button></div></div></div>'}
+function addGate(){var d=+$('#gd').value,t=+$('#gt').value,r=Math.min(5,[7,14,21,30].indexOf(d)+t);mkD({type:'gate',name:$('#gn').value.trim()||RK[r]+' 級傳送門',rank:r,days:d,k:[.7,.85,1][t]});closeOv()}
+function enterTower(f){if(!S.habits.length){toast('請先建立任務',true);return}mkD({type:'tower',floor:f,name:'試煉之塔 第 '+f+' 層',rank:Math.min(5,Math.floor((f-1)/5)),days:7,k:Math.min(1,.7*(1+.05*(f-1)))});render()}
+function openBoss(){$('#ov').innerHTML='<div class="ov"><div class="win"><div class="ttl">[ 設定首領 ]</div><label>真實目標（首領名稱）</label><input id="bn" maxlength="20" placeholder="例如：體重降到 65 公斤"><label>單位</label><input id="bu" maxlength="6" placeholder="kg、公里、本"><label>起始值</label><input id="bf" type="number" step="any"><label>目標值</label><input id="bt" type="number" step="any"><label>強度</label><select id="bk"><option value="0">標準（C 級）</option><option value="1">精英（B 級）</option><option value="2">地獄（A 級）</option></select><div class="btns" style="justify-content:center;margin-top:14px"><button class="b r" onclick="addBoss()">挑戰</button><button class="b x" style="margin-left:0" onclick="closeOv()">取消</button></div></div></div>'}
+function addBoss(){var f=parseFloat($('#bf').value),t=parseFloat($('#bt').value),n=$('#bn').value.trim(),r=2+ +$('#bk').value;if(!n||isNaN(f)||isNaN(t)||f===t){toast('請填寫目標、起始值與目標值',true);return}mkD({type:'boss',name:n,rank:r,goal:{u:$('#bu').value.trim(),f:f,t:t,c:f},mon:rnd(MON[r])});closeOv()}
+function prog(d){var g=d.goal;return Math.max(0,Math.min(1,(g.c-g.f)/(g.t-g.f)))}
+function openVal(id){$('#ov').innerHTML='<div class="ov"><div class="win"><div class="ttl">[ 更新目前數值 ]</div><input id="bv" type="number" step="any" placeholder="目前數值"><div class="btns" style="justify-content:center;margin-top:14px"><button class="b" onclick="setVal(\''+id+'\')">更新</button><button class="b x" style="margin-left:0" onclick="closeOv()">取消</button></div></div></div>'}
+function setVal(id){var d=S.dungeons.find(function(x){return x.id===id}),v=parseFloat($('#bv').value);if(!d||isNaN(v))return;d.goal.c=v;save();if(prog(d)>=1)clearD(d);closeOv()}
+function delD(id){if(confirmId!==id){confirmId=id;render();return}S.dungeons=S.dungeons.filter(function(x){return x.id!==id});confirmId=null;save();render()}
+function hit(x){var c=[];S.dungeons.forEach(function(d){if(d.type==='boss')return;d.hp=Math.max(0,d.hp-x*(sk('s5')?1.2:1));if(d.hp<=0)c.push(d)});c.forEach(clearD)}
+function clearD(d){S.dungeons=S.dungeons.filter(function(x){return x.id!==d.id});var r=d.rank,gm=Math.round([10,20,40,80,150,300][r]*(d.type==='boss'?1.5:1)),xp=gain([30,60,120,200,350,600][r]);S.gems+=gm;
+ var n=1+(r>=2?1:0)+(r>=4?1:0)+(d.type==='boss'?1:0),it=[];for(var i=0;i<n;i++)it.push(loot(pickR(W[r])));
+ var mn=d.mon||rnd(MON[r]),ch=Math.min(1,(d.type==='boss'?1:d.type==='tower'?.6:.7)+(sk('s6')?.2:0)),ex;
+ if(Math.random()<ch){var mr=[0,0,1,1,2,3][r];S.legion=S.legion||[];S.legion.push({n:mn,r:mr});ex='<div class="big glitch" style="font-size:30px;margin-top:10px">ARISE</div><div class="it r'+mr+'">暗影收編：'+esc(mn)+'（'+RN[mr]+'）</div>'}
+ else ex='<div class="sub">暗影收編失敗：'+esc(mn)+' 的身影消散了</div>';
+ if(d.type==='tower'){S.best=Math.max(S.best||0,d.floor);enterTower(d.floor+1)}
+ save();ovq.push({k:'clear',h:'<div class="ov"><div class="win" style="max-height:92vh;overflow:auto"><div class="ttl" style="justify-content:center">[ 副本攻略完成 ]</div><div class="big" style="font-size:32px">DUNGEON CLEAR</div><div style="font-size:14px">'+esc(d.name)+'　'+RK[r]+' 級</div><div class="sub">魂晶 +'+gm+'　XP +'+xp+'</div>'+itemsHtml(it)+ex+'<div class="btns" style="justify-content:center"><button class="b" onclick="closeOv()">確認</button></div></div></div>'})}
+function dExpire(){S.dungeons.slice().forEach(function(d){if(d.type==='boss'||d.end>=T)return;S.dungeons=S.dungeons.filter(function(x){return x.id!==d.id});
+ if(d.type==='tower'){var f=Math.max(1,d.floor-1);enterTower(f);toast('[系統] 試煉失敗，退回第 '+f+' 層',true)}else toast('[系統] 傳送門「'+d.name+'」崩塌，攻略失敗',true)})}
+function dcard(d){var b=d.type==='boss',p=b?prog(d)*100:(1-d.hp/d.max)*100;
+ return'<div class="q"><div class="qh"><div><span class="qn">'+esc(d.name)+'</span><span class="tag">'+RK[d.rank]+' 級</span></div>'+(b?'':'<div class="sub" style="margin:0">剩 '+Math.max(0,daysDiff(T,d.end)+1)+' 天</div>')+'</div>'
+ +(b?'<div class="sub">首領：'+esc(d.mon)+'　起始 '+d.goal.f+' → 目標 '+d.goal.t+esc(d.goal.u)+'　目前 '+d.goal.c+'</div>':'<div class="sub">首領血量 '+Math.ceil(d.hp)+' ／ '+d.max+'</div>')
+ +'<div class="bar hp"><i style="width:'+(100-p)+'%"></i></div><div class="btns">'+(b?'<button class="b" onclick="openVal(\''+d.id+'\')">更新目前數值</button>':'')+'<button class="b x" onclick="delD(\''+d.id+'\')">'+(confirmId===d.id?'確定放棄？':'放棄')+'</button></div></div>'}
+function dunView(){var f=function(t){return S.dungeons.filter(function(d){return d.type===t})},g=f('gate'),t=f('tower'),b=f('boss');
+ return'<div class="win"><div class="sub" style="margin:0">每次完成任務，會對傳送門與試煉之塔造成等同該任務 XP 的傷害；首領討伐則依你回報的真實數值推進。通關可得魂晶、戰利品，並有機會收編暗影。</div></div>'
+ +'<div class="win"><div class="ttl">[ 傳送門 ]</div>'+(g.map(dcard).join('')||'<div class="empty">尚無傳送門</div>')+'<button class="b add" style="margin:0" onclick="openGate()">＋ 開啟傳送門</button></div>'
+ +'<div class="win"><div class="ttl"><span>[ 試煉之塔 ]</span><span>最高 '+(S.best||0)+' 層</span></div>'+(t.map(dcard).join('')||'<button class="b add" style="margin:0" onclick="enterTower(1)">進入試煉之塔</button>')+'</div>'
+ +'<div class="win" style="border-color:#7a2442"><div class="ttl" style="color:var(--red)">[ 首領討伐 ]</div>'+(b.map(dcard).join('')||'<div class="empty">用真實目標當首領，例如體重、跑步距離</div>')+'<button class="b add r" style="margin:0" onclick="openBoss()">＋ 設定首領</button></div>'}
+function vaultView(){return'<div class="win"><div class="ttl"><span>[ 寶庫 ]</span><span style="color:var(--gold)">魂晶 '+S.gems+'</span></div><div class="sub" style="margin:0 0 8px">每完成一個任務得 1 魂晶；通關副本、收編習慣暗影可得更多。機率：普通 60%、稀有 28%、史詩 9%、傳說 3%。再抽 '+(30-S.pity)+' 次內必出傳說（保底）。十連至少一個稀有。</div><div class="btns"><button class="b g" onclick="pull(1)">單抽 10</button><button class="b g" onclick="pull(10)">十連 90</button></div></div>'
+ +'<div class="win"><div class="ttl"><span>[ 裝備 ]</span><span>XP +'+Math.round(gearPct()*100)+'%</span></div>'+KD.map(function(n,k){var b=bestG(k);return'<div class="it"><span>'+n+'</span>'+(b<0?'<span style="color:var(--dim)">未取得</span>':'<span class="r'+b+'">'+RN[b]+'・'+EQN[k][b]+'</span>')+'</div>'}).join('')+'</div>'
+ +'<div class="win"><div class="ttl">[ 技能 ]</div>'+((S.skills||[]).map(function(i){return'<div class="it r'+SK[i][2]+'"><span>'+SK[i][0]+'</span><span style="color:var(--dim);font-size:12px">'+SK[i][1]+'</span></div>'}).join('')||'<div class="empty">尚無技能</div>')+'</div>'}
+function legionView(){var L=S.legion||[];return'<div class="win arise" style="border-color:var(--violet)"><div class="ttl" style="color:var(--violet)"><span>[ 暗影士兵（戰利品） ]</span><span>XP +'+Math.round(legPct()*100)+'%</span></div>'+(L.map(function(m){return'<div class="it r'+m.r+'"><span>'+esc(m.n)+'</span><span>'+RN[m.r]+'・+'+Math.round(LP[m.r]*100)+'%</span></div>'}).join('')||'<div class="empty">通關副本或抽取，有機會收編暗影士兵。</div>')+'</div>'}
 function toast(m,bad){var d=document.createElement('div');d.textContent=m;if(bad)d.className='bad';$('#toast').appendChild(d);setTimeout(function(){d.remove()},2600)}
 function $(s){return document.querySelector(s)}
 function shadows(){return S.habits.filter(function(h){return h.shadow})}
-function mult(){return Math.min(2,1+0.1*shadows().length)}
 function gain(x){x=Math.round(x*mult());S.xp+=x;
  while(S.xp>=need(S.lv)){S.xp-=need(S.lv);S.lv++;S.hp=100;ovq.push({k:'level',lv:S.lv})}return x}
 function sRank(h){var r=h.total/h.goal;return r>=5?['將','暗影將軍']:r>=3?['精','暗影精英']:r>=2?['騎','暗影騎士']:['兵','暗影士兵']}
 function done(h){return h.last===T}
 function complete(id){var h=S.habits.find(function(x){return x.id===id});if(!h||done(h))return;
- h.streak++;h.total++;h.last=T;S.stats[h.stat]++;var g=gain(h.xp);
+ h.streak++;h.total++;h.last=T;S.stats[h.stat]++;var g=gain(h.xp);S.gems+=1+(sk('s1')?1:0);hit(h.xp);
  toast('[系統] '+(h.type==='bad'?'成功忍住':'任務完成')+'：'+h.name+'　+'+g+' XP');
  if(h.streak>=h.goal&&!h.shadow)ovq.push({k:'arise',id:h.id});
  save();render();flush()}
 function slip(id){var h=S.habits.find(function(x){return x.id===id});if(!h)return;
- h.streak=0;h.last=null;S.hp-=15;S.xp=Math.max(0,S.xp-h.xp);
- toast('[系統] 破戒：'+h.name+'　HP -15　XP -'+h.xp,true);
+ h.streak=0;h.last=null;S.hp-=sk('s3')?10:15;S.xp=Math.max(0,S.xp-h.xp);
+ toast('[系統] 破戒：'+h.name+'　HP -'+(sk('s3')?10:15)+'　XP -'+h.xp,true);
  if(S.hp<=0){S.hp=50;S.xp=0;toast('[系統] 瀕死！本級經驗歸零，HP 回復至 50',true)}
  save();render()}
 function del(id){if(confirmId!==id){confirmId=id;render();return}
  S.habits=S.habits.filter(function(x){return x.id!==id});confirmId=null;save();render()}
 function flush(){if($('#ov').innerHTML||!ovq.length)return;var o=ovq.shift(),h;
  if(o.k==='quiz'){startQuiz();return}
+ if(o.k==='clear'){$('#ov').innerHTML='<div class="flash"></div>'+o.h;return}
  if(o.k==='pen'){$('#ov').innerHTML='<div class="flash" style="background:radial-gradient(circle,#ff5a78,transparent 60%)"></div><div class="ov"><div class="win" style="border-color:var(--red)"><div class="ttl" style="justify-content:center;color:var(--red)">[ 懲罰通知 ]</div><div class="big glitch" style="font-size:36px">PENALTY</div><div class="sub">困難模式：未完成的任務已自動結算</div><div style="text-align:left;font-size:14px">'+o.L.map(function(t){return'<div>'+esc(t)+'</div>'}).join('')+'</div><div class="sub">HP -'+o.hp+'　XP -'+o.xp+'</div><div class="btns" style="justify-content:center"><button class="b r" onclick="closeOv()">確認</button></div></div></div>';return}
  if(o.k==='level'){$('#ov').innerHTML='<div class="flash"></div><div class="ov"><div class="win"><div class="ttl" style="justify-content:center">[ 系統通知 ]</div><div class="big glitch">LEVEL UP</div><div style="font-size:15px">等級提升至 <b style="color:#fff;font-size:24px">Lv.'+o.lv+'</b> ／ 階級 '+rankOf(o.lv)+'</div><div class="sub">HP 已完全回復。可前往「獎勵」查看已解鎖的獎勵。</div><div class="btns" style="justify-content:center"><button class="b" onclick="closeOv()">確認</button></div></div></div>'}
  else{h=S.habits.find(function(x){return x.id===o.id});if(!h){closeOv();return}
-  $('#ov').innerHTML='<div class="flash" style="background:radial-gradient(circle,#b48cff,transparent 60%)"></div><div class="ov arise"><div class="win arise"><div class="ttl" style="justify-content:center;color:var(--violet)">[ 目標達成 ]</div><div class="big glitch">ARISE</div><div style="font-size:15px">「'+esc(h.name)+'」已連續 '+h.streak+' 天，<br>可收為你的暗影士兵。</div><div class="sub">暗影越多，所有 XP 加成越高（上限 2 倍）。收編另獲 '+(h.goal*5)+' XP。</div><div class="btns" style="justify-content:center"><button class="b g" onclick="arise(\''+h.id+'\')">起身</button></div></div></div>'}}
-function arise(id){var h=S.habits.find(function(x){return x.id===id});h.shadow=true;var g=gain(h.goal*5);
+  $('#ov').innerHTML='<div class="flash" style="background:radial-gradient(circle,#b48cff,transparent 60%)"></div><div class="ov arise"><div class="win arise"><div class="ttl" style="justify-content:center;color:var(--violet)">[ 目標達成 ]</div><div class="big glitch">ARISE</div><div style="font-size:15px">「'+esc(h.name)+'」已連續 '+h.streak+' 天，<br>可收為你的暗影士兵。</div><div class="sub">暗影越多，所有 XP 加成越高（總加成上限 3 倍）。收編另獲 '+(h.goal*5)+' XP。</div><div class="btns" style="justify-content:center"><button class="b g" onclick="arise(\''+h.id+'\')">起身</button></div></div></div>'}}
+function arise(id){var h=S.habits.find(function(x){return x.id===id});h.shadow=true;S.gems+=10;var g=gain(h.goal*5);
  toast('[系統] 暗影收編：'+h.name+'　+'+g+' XP');save();closeOv();render()}
 function closeOv(){$('#ov').innerHTML='';render();flush()}
 function openAdd(){$('#ov').innerHTML='<div class="ov"><div class="win" style="max-height:92vh;overflow:auto"><div class="ttl">[ 新增任務 ]</div><label>任務名稱</label><input id="fn" maxlength="30" placeholder="例如：每天運動 30 分鐘"><label>類型</label><div class="seg"><button class="b sel" id="tg" onclick="setT(\'good\')">好習慣（養成）</button><button class="b" id="tb" onclick="setT(\'bad\')">壞習慣（戒除）</button></div><label>強化屬性</label><select id="fs">'+Object.keys(STATS).map(function(k){return'<option value="'+k+'">'+STATS[k]+'</option>'}).join('')+'</select><label>每次完成的 XP</label><select id="fx"><option>10</option><option selected>20</option><option>30</option><option>50</option></select><label>目標天數（連續達成後可收為暗影）</label><input id="fg" type="number" min="3" max="365" value="21"><div class="btns" style="justify-content:center;margin-top:16px"><button class="b" onclick="addH()">建立任務</button><button class="b x" style="margin-left:0" onclick="closeOv()">取消</button></div></div></div>';window._t='good'}
@@ -187,13 +247,13 @@ function setName(v){S.name=v.slice(0,12)||'玩家';save()}
 function card(h){var p=Math.min(100,h.streak/h.goal*100),bad=h.type==='bad',d=done(h);
  return'<div class="q '+(bad?'bad ':'')+(d?'done':'')+'"><div class="qh"><div><span class="qn">'+esc(h.name)+'</span><span class="tag">'+STATS[h.stat]+' +1</span>'+(h.shadow?'<span class="tag" style="color:var(--violet);border-color:var(--violet)">暗影</span>':'')+'</div><div style="font-size:13px;color:var(--gold);white-space:nowrap">+'+h.xp+' XP</div></div><div class="sub">連續 '+h.streak+' ／ 目標 '+h.goal+' 天　累計 '+h.total+' 次</div><div class="bar '+(h.shadow?'gd':'')+'"><i style="width:'+p+'%"></i></div><div class="btns"><button class="b" '+(d?'disabled':'')+' onclick="complete(\''+h.id+'\')">'+(d?'今日已完成':bad?'今天忍住了':'完成')+'</button>'+(bad?'<button class="b r" onclick="slip(\''+h.id+'\')">破戒了</button>':'')+'<button class="b x" onclick="del(\''+h.id+'\')">'+(confirmId===h.id?'確定刪除？':'刪除')+'</button></div></div>'}
 function render(){
- var tabs=[['status','狀態'],['quests','任務'],['army','暗影軍團'],['shop','獎勵']];
+ var tabs=[['status','狀態'],['quests','任務'],['dun','副本'],['army','暗影'],['vault','寶庫'],['shop','獎勵']];
  $('#tabs').innerHTML=tabs.map(function(t){return'<button class="'+(tab===t[0]?'on':'')+'" onclick="go(\''+t[0]+'\')">'+t[1]+'</button>'}).join('');
  var h='',H=S.habits,dn=H.filter(done).length;
  if(tab==='status'){
   h+='<div class="win"><div class="ttl"><span>[ 狀態視窗 ]</span><span>'+T+'</span></div><div class="hero"><div><div class="lv">'+S.lv+'</div><div class="lvl">等級</div></div><div style="flex:1"><input class="nm" value="'+esc(S.name)+'" onchange="setName(this.value)" aria-label="玩家名稱"><div class="rank">階級 '+rankOf(S.lv)+'</div></div></div><div class="row"><span>經驗值</span><span>'+S.xp+' ／ '+need(S.lv)+'</span></div><div class="bar"><i style="width:'+S.xp/need(S.lv)*100+'%"></i></div><div class="row"><span>生命值</span><span>'+S.hp+' ／ 100</span></div><div class="bar hp"><i style="width:'+S.hp+'%"></i></div></div>';
   h+='<div class="win"><div class="ttl">[ 能力值 ]</div><div class="stats">'+Object.keys(STATS).map(function(k){return'<div class="st">'+STATS[k]+'<b>'+S.stats[k]+'</b></div>'}).join('')+'</div></div>';
-  h+='<div class="win"><div class="ttl"><span>[ 今日進度 ]</span><span class="cd"></span></div><div class="row" style="margin-top:0"><span>已完成任務</span><span>'+dn+' ／ '+H.length+'</span></div><div class="bar"><i style="width:'+(H.length?dn/H.length*100:0)+'%"></i></div><div class="sub">暗影士兵 '+shadows().length+' 名，XP 加成 ×'+mult().toFixed(1)+'</div></div>';
+  h+='<div class="win"><div class="ttl"><span>[ 今日進度 ]</span><span class="cd"></span></div><div class="row" style="margin-top:0"><span>已完成任務</span><span>'+dn+' ／ '+H.length+'</span></div><div class="bar"><i style="width:'+(H.length?dn/H.length*100:0)+'%"></i></div><div class="sub">暗影士兵 '+shadows().length+' 名，XP 加成 ×'+mult().toFixed(1)+'　魂晶 '+S.gems+'</div></div>';
   h+=modeBox()}
  if(tab==='quests'){
   h+=cdBox();h+='<button class="b add" onclick="openAdd()">＋ 新增任務</button>';
@@ -213,7 +273,7 @@ function render(){
   if(!S.rewards.length)h+='<div class="empty">替自己設定升級獎勵，等級到了就能領取。</div>';
   S.rewards.slice().sort(function(a,b){return a.lv-b.lv}).forEach(function(r){var ok=S.lv>=r.lv;
    h+='<div class="q" style="'+(r.claimed?'opacity:.5':'')+'"><div class="qh"><span class="qn">'+esc(r.name)+'</span><span class="tag">Lv.'+r.lv+'</span></div><div class="btns"><button class="b g" '+(!ok||r.claimed?'disabled':'')+' onclick="claim(\''+r.id+'\')">'+(r.claimed?'已領取':ok?'領取':'尚未解鎖')+'</button><button class="b x" onclick="delR(\''+r.id+'\')">刪除</button></div></div>'})}
- $('#app').innerHTML=h;updateCd()}
+ if(tab==='army')h+=legionView();if(tab==='dun')h+=dunView();if(tab==='vault')h+=vaultView();$('#app').innerHTML=h;updateCd()}
 function go(t){tab=t;confirmId=null;render();window.scrollTo(0,0)}
 load();render();flush();setInterval(tick,1000);
 document.addEventListener('visibilitychange',function(){if(!document.hidden)tick()});
